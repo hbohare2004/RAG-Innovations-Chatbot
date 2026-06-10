@@ -1,0 +1,53 @@
+# Core LangChain
+langchain
+langchain-core
+langchain-community
+langchain-text-splitters
+
+# Mistral AI
+mistralai
+langchain-mistralai
+
+# Vector Database
+chromadb
+faiss-cpu
+
+# Embeddings
+sentence-transformers
+
+# Website Loading & Crawling
+beautifulsoup4
+requests
+lxml
+
+# LangChain Web Loaders
+unstructured
+
+# Environment Variables
+python-dotenv
+streamlit
+
+# Token Counting
+tiktoken
+
+# Data Processing
+pandas
+numpy
+
+# Validation
+pydantic
+
+# Logging
+tqdm
+
+# Optional Advanced Crawling
+selenium
+webdriver-manager
+
+# Optional Evaluation
+# ragas
+# datasets
+
+# Monitoring
+langsmith
+
