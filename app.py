@@ -1,10 +1,29 @@
 # pyrefly: ignore [missing-import]
 import os
 import sys
+import logging
 # pyrefly: ignore [missing-import]
 import streamlit as st
 # pyrefly: ignore [missing-import]
 from dotenv import load_dotenv
+
+# ===================== SECRETS BRIDGING =====================
+# Bridge Streamlit Secrets → os.environ BEFORE any LangChain imports
+# that read MISTRAL_API_KEY at import/construction time.
+# On Streamlit Cloud, there is no .env file — secrets live in st.secrets.
+# On local dev, load_dotenv() reads from .env.
+try:
+    if "MISTRAL_API_KEY" in st.secrets:
+        os.environ["MISTRAL_API_KEY"] = st.secrets["MISTRAL_API_KEY"]
+except Exception:
+    pass  # st.secrets not available locally
+
+load_dotenv()  # Local .env fallback
+
+# Clean the key: strip whitespace, quotes, newlines
+if os.getenv("MISTRAL_API_KEY"):
+    os.environ["MISTRAL_API_KEY"] = os.getenv("MISTRAL_API_KEY").strip().strip('"').strip("'").strip()
+
 # pyrefly: ignore [missing-import]
 from langchain_mistralai import ChatMistralAI, MistralAIEmbeddings
 # pyrefly: ignore [missing-import]
@@ -18,21 +37,96 @@ from langchain_community.document_loaders import PyPDFLoader
 # pyrefly: ignore [missing-import]
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-load_dotenv()
+# Setup logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-# ===================== BACKEND (UNCHANGED) =====================
+# ===================== BACKEND =====================
 @st.cache_resource(show_spinner=False)
 def init_rag():
-    embedding_model = MistralAIEmbeddings()
-    vectorstore = Chroma(
-        embedding_function=embedding_model,
-        persist_directory="RagInno_DB"
-    )
-    retriever = vectorstore.as_retriever(
-        search_type="mmr",
-        search_kwargs={"k": 5}
-    )
-    model = ChatMistralAI(model="mistral-small-2603")
+    """Initialize the RAG pipeline with full error handling and diagnostics."""
+    diagnostics = {
+        "api_key_loaded": False,
+        "api_key_prefix": "",
+        "chroma_loaded": False,
+        "doc_count": 0,
+        "embedding_test": False,
+        "retriever_ready": False,
+        "llm_ready": False,
+        "errors": [],
+        "python_version": sys.version,
+    }
+
+    # --- Check API Key ---
+    api_key = os.getenv("MISTRAL_API_KEY", "")
+    if api_key:
+        diagnostics["api_key_loaded"] = True
+        diagnostics["api_key_prefix"] = api_key[:8] + "..." if len(api_key) > 8 else "***"
+    else:
+        diagnostics["errors"].append("MISTRAL_API_KEY is empty or not set.")
+        return None, None, None, diagnostics
+
+    # --- Initialize Embedding Model ---
+    try:
+        embedding_model = MistralAIEmbeddings()
+        logger.info("✅ MistralAIEmbeddings initialized.")
+    except Exception as e:
+        diagnostics["errors"].append(f"Embedding model init failed: {e}")
+        return None, None, None, diagnostics
+
+    # --- Load ChromaDB ---
+    try:
+        vectorstore = Chroma(
+            embedding_function=embedding_model,
+            persist_directory="RagInno_DB"
+        )
+        diagnostics["chroma_loaded"] = True
+        # Get document count
+        try:
+            collection = vectorstore._collection
+            diagnostics["doc_count"] = collection.count()
+        except Exception as e:
+            diagnostics["doc_count"] = -1
+            diagnostics["errors"].append(f"Could not count docs: {e}")
+        logger.info(f"✅ ChromaDB loaded. Documents: {diagnostics['doc_count']}")
+    except Exception as e:
+        diagnostics["errors"].append(f"ChromaDB loading failed: {e}")
+        return None, None, None, diagnostics
+
+    # --- Test Embedding ---
+    try:
+        test_embedding = embedding_model.embed_query("test")
+        if test_embedding and len(test_embedding) > 0:
+            diagnostics["embedding_test"] = True
+            logger.info(f"✅ Embedding test passed. Vector dimension: {len(test_embedding)}")
+        else:
+            diagnostics["errors"].append("Embedding test returned empty vector.")
+    except Exception as e:
+        diagnostics["errors"].append(f"Embedding test failed: {e}")
+        return None, None, None, diagnostics
+
+    # --- Create Retriever ---
+    try:
+        retriever = vectorstore.as_retriever(
+            search_type="mmr",
+            search_kwargs={"k": 5}
+        )
+        diagnostics["retriever_ready"] = True
+        logger.info("✅ Retriever created.")
+    except Exception as e:
+        diagnostics["errors"].append(f"Retriever creation failed: {e}")
+        return None, None, None, diagnostics
+
+    # --- Initialize LLM ---
+    try:
+        model = ChatMistralAI(model="mistral-small-2503")
+        diagnostics["llm_ready"] = True
+        logger.info("✅ ChatMistralAI initialized.")
+    except Exception as e:
+        diagnostics["errors"].append(f"LLM init failed: {e}")
+        return None, None, None, diagnostics
+
+    # --- Prompt Template ---
     template = ChatPromptTemplate.from_messages(
         [
             ("system", """
@@ -66,29 +160,38 @@ Website Context:
             )
         ]
     )
-    return retriever, model, template
+
+    return retriever, model, template, diagnostics
 
 
 def answer_query(query, retriever, model, template):
-    # Retrieve relevant documents for the query
-    docs = retriever.invoke(query)
+    """Answer a user query with full error handling."""
+    try:
+        docs = retriever.invoke(query)
+    except Exception as e:
+        logger.error(f"Retriever error: {e}")
+        return f"⚠️ **Retrieval Error:** Could not search the knowledge base.\n\n`{type(e).__name__}: {e}`"
+
     context = "\n\n".join([doc.page_content for doc in docs])
 
-    # If very little context is found, use general LLM knowledge
-    if len(context.strip()) < 100:
-        general_prompt = f"""
-        User Question: {query}
+    try:
+        if len(context.strip()) < 100:
+            general_prompt = f"""
+            User Question: {query}
 
-        Answer the question using your general knowledge.
+            Answer the question using your general knowledge.
 
-        If it is a health-related question:
-            - First advise the user to consult a qualified doctor.
-            - Then provide general educational information.
-        """
-        response = model.invoke(general_prompt)
-    else:
-        prompt = template.format_messages(question=query, context=context)
-        response = model.invoke(prompt)
+            If it is a health-related question:
+                - First advise the user to consult a qualified doctor.
+                - Then provide general educational information.
+            """
+            response = model.invoke(general_prompt)
+        else:
+            prompt = template.format_messages(question=query, context=context)
+            response = model.invoke(prompt)
+    except Exception as e:
+        logger.error(f"LLM error: {e}")
+        return f"⚠️ **LLM Error:** Could not generate a response.\n\n`{type(e).__name__}: {e}`"
 
     return response.content
 
@@ -104,12 +207,18 @@ st.set_page_config(
     initial_sidebar_state=st.session_state.sidebar_state,
 )
 
-# Clean and validate Mistral API key
-if os.getenv("MISTRAL_API_KEY"):
-    os.environ["MISTRAL_API_KEY"] = os.getenv("MISTRAL_API_KEY").strip().strip('"').strip("'")
-
+# --- Final API Key Gate ---
 if not os.getenv("MISTRAL_API_KEY"):
-    st.error("🔑 **Mistral API Key is missing!** Please set `MISTRAL_API_KEY` in your environment variables or Streamlit Secrets (secrets.toml) to enable the chatbot.")
+    st.error("🔑 **Mistral API Key is missing!** Please set `MISTRAL_API_KEY` in your Streamlit Secrets (Settings → Secrets) or local `.env` file.")
+    st.info("""
+**How to fix on Streamlit Cloud:**
+1. Go to your app dashboard → **Settings** → **Secrets**
+2. Add:
+```toml
+MISTRAL_API_KEY = "your-actual-mistral-api-key"
+```
+3. Click **Save**. The app will restart automatically.
+    """)
     st.stop()
 
 CUSTOM_CSS = """
@@ -386,9 +495,38 @@ with st.sidebar:
         unsafe_allow_html=True,
     )
 
-# ----- Init RAG -----
+# ----- Init RAG with diagnostics -----
 with st.spinner("Warming up the knowledge base…"):
-    retriever, model, template = init_rag()
+    result = init_rag()
+
+if result is None or len(result) != 4:
+    st.error("❌ RAG initialization returned an unexpected result. Please check the logs.")
+    st.stop()
+
+retriever, model, template, diagnostics = result
+
+# ----- Show diagnostics in sidebar (collapsible) -----
+with st.sidebar:
+    with st.expander("🔧 System Diagnostics", expanded=False):
+        st.caption(f"**Python:** `{diagnostics['python_version'].split()[0]}`")
+        st.caption(f"**API Key:** {'✅ Loaded' if diagnostics['api_key_loaded'] else '❌ Missing'} ({diagnostics.get('api_key_prefix', 'N/A')})")
+        st.caption(f"**ChromaDB:** {'✅ Loaded' if diagnostics['chroma_loaded'] else '❌ Failed'}")
+        st.caption(f"**Documents:** `{diagnostics['doc_count']}`")
+        st.caption(f"**Embedding Test:** {'✅ Passed' if diagnostics['embedding_test'] else '❌ Failed'}")
+        st.caption(f"**Retriever:** {'✅ Ready' if diagnostics['retriever_ready'] else '❌ Failed'}")
+        st.caption(f"**LLM:** {'✅ Ready' if diagnostics['llm_ready'] else '❌ Failed'}")
+        if diagnostics["errors"]:
+            st.error("**Errors:**")
+            for err in diagnostics["errors"]:
+                st.code(err, language="text")
+
+# ----- Check if RAG is healthy -----
+if retriever is None or model is None or template is None:
+    st.error("❌ **RAG pipeline failed to initialize.** Check the diagnostics panel in the sidebar.")
+    if diagnostics["errors"]:
+        for err in diagnostics["errors"]:
+            st.error(err)
+    st.stop()
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -413,7 +551,7 @@ if not st.session_state.messages:
         """,
         unsafe_allow_html=True,
     )
-    
+
     st.markdown('<div class="section-label try-asking-label" style="text-align: center; margin-bottom: 16px;">Try asking</div>', unsafe_allow_html=True)
     row1_col1, row1_col2 = st.columns(2)
     with row1_col1:
@@ -432,7 +570,6 @@ if not st.session_state.messages:
             pending_prompt = SUGGESTIONS[3][1]
 
 # ----- Render history -----
-# Find the index of the last user message to append the scroll anchor
 last_user_idx = -1
 for idx in range(len(st.session_state.messages) - 1, -1, -1):
     if st.session_state.messages[idx]["role"] == "user":
@@ -462,7 +599,7 @@ if prompt:
         st.markdown(answer)
 
     st.session_state.messages.append({"role": "assistant", "content": answer})
-    
+
     # Trigger scroll element using Javascript component
     js_scroll = """
     <script>
