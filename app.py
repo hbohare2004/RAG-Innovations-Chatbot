@@ -104,6 +104,14 @@ st.set_page_config(
     initial_sidebar_state=st.session_state.sidebar_state,
 )
 
+# Clean and validate Mistral API key
+if os.getenv("MISTRAL_API_KEY"):
+    os.environ["MISTRAL_API_KEY"] = os.getenv("MISTRAL_API_KEY").strip().strip('"').strip("'")
+
+if not os.getenv("MISTRAL_API_KEY"):
+    st.error("🔑 **Mistral API Key is missing!** Please set `MISTRAL_API_KEY` in your environment variables or Streamlit Secrets (secrets.toml) to enable the chatbot.")
+    st.stop()
+
 CUSTOM_CSS = """
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
