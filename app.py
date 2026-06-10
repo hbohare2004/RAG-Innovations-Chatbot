@@ -198,7 +198,7 @@ def answer_query(query, retriever, model, template):
 
 # ===================== UI =====================
 if "sidebar_state" not in st.session_state:
-    st.session_state.sidebar_state = "expanded"
+    st.session_state.sidebar_state = "collapsed"
 
 st.set_page_config(
     page_title="RagAI · Menstrual Hygiene AI Assistant",
@@ -438,62 +438,62 @@ section[data-testid="stSidebar"] [data-testid="stSidebarUserContent"] {
 """;
 st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
 
-# ----- Open Sidebar Button (when collapsed) -----
-if st.session_state.sidebar_state == "collapsed":
-    col_open, _ = st.columns([2, 8])
-    with col_open:
-        if st.button("☰ Menu", key="open_sidebar_btn", use_container_width=True, help="Expand sidebar"):
-            st.session_state.sidebar_state = "expanded"
-            st.rerun()
+# ----- Open Sidebar Button (when collapsed) - Commented Out -----
+# if st.session_state.sidebar_state == "collapsed":
+#     col_open, _ = st.columns([2, 8])
+#     with col_open:
+#         if st.button("☰ Menu", key="open_sidebar_btn", use_container_width=True, help="Expand sidebar"):
+#             st.session_state.sidebar_state = "expanded"
+#             st.rerun()
 
-# ----- Sidebar -----
-with st.sidebar:
-    # Top row: Logo and Collapse Button
-    sb_col1, sb_col2 = st.columns([5, 2])
-    with sb_col1:
-        st.markdown(
-            """
-            <div class="sb-logo">
-              <div class="sb-logo-mark">🌸</div>
-              <div>RagAI<br><span style="font-size:10px;font-weight:600;color:#57606a;letter-spacing:.5px;">BY RAG INNOVATIONS</span></div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-    with sb_col2:
-        if st.button("✕", key="close_sidebar", help="Collapse sidebar", use_container_width=True):
-            st.session_state.sidebar_state = "collapsed"
-            st.rerun()
+# ----- Sidebar - Commented Out -----
+# with st.sidebar:
+#     # Top row: Logo and Collapse Button
+#     sb_col1, sb_col2 = st.columns([5, 2])
+#     with sb_col1:
+#         st.markdown(
+#             """
+#             <div class="sb-logo">
+#               <div class="sb-logo-mark">🌸</div>
+#               <div>RagAI<br><span style="font-size:10px;font-weight:600;color:#57606a;letter-spacing:.5px;">BY RAG INNOVATIONS</span></div>
+#             </div>
+#             """,
+#             unsafe_allow_html=True,
+#         )
+#     with sb_col2:
+#         if st.button("✕", key="close_sidebar", help="Collapse sidebar", use_container_width=True):
+#             st.session_state.sidebar_state = "collapsed"
+#             st.rerun()
 
-    st.markdown(
-        """
-        <div class="sb-tag">Smart guidance on menstrual hygiene and school compliance solutions.</div>
-        """,
-        unsafe_allow_html=True,
-    )
+#     st.markdown(
+#         """
+#         <div class="sb-tag">Smart guidance on menstrual hygiene and school compliance solutions.</div>
+#         """,
+#         unsafe_allow_html=True,
+#     )
 
-    st.markdown('<div class="section-label">Workspace</div>', unsafe_allow_html=True)
-    if st.button("✨  New conversation", use_container_width=True):
-        st.session_state.messages = []
-        st.rerun()
+#     st.markdown('<div class="section-label">Workspace</div>', unsafe_allow_html=True)
+#     if st.button("✨  New conversation", use_container_width=True):
+#         st.session_state.messages = []
+#         st.rerun()
 
-    st.markdown('<div class="section-label">About</div>', unsafe_allow_html=True)
-    st.markdown(
-        """
-        <div class="sb-card">
-          <h4>About Rag Innovations</h4>
-          <p>Rag Innovations specializes in Menstrual Hygiene Management (MHM) compliance solutions, including automated sanitary napkin vending machines and incinerators to promote clean, dignified hygiene practices.</p>
-        </div>
-        <div class="sb-card">
-          <h4>What RagAI Can Help With</h4>
-          <p>Get instant guidance on menstrual hygiene, sanitary napkin usage, disposal, and MHM compliance practices grounded in verified sources.</p>
-        </div>
-        <div class="sb-disclaimer">
-          ⚕️ <b>Disclaimer:</b> RagAI is an educational resource by Rag Innovations and does not provide clinical medical advice or diagnosis. Always consult a healthcare professional.
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+#     st.markdown('<div class="section-label">About</div>', unsafe_allow_html=True)
+#     st.markdown(
+#         """
+#         <div class="sb-card">
+#           <h4>About Rag Innovations</h4>
+#           <p>Rag Innovations specializes in Menstrual Hygiene Management (MHM) compliance solutions, including automated sanitary napkin vending machines and incinerators to promote clean, dignified hygiene practices.</p>
+#         </div>
+#         <div class="sb-card">
+#           <h4>What RagAI Can Help With</h4>
+#           <p>Get instant guidance on menstrual hygiene, sanitary napkin usage, disposal, and MHM compliance practices grounded in verified sources.</p>
+#         </div>
+#         <div class="sb-disclaimer">
+#           ⚕️ <b>Disclaimer:</b> RagAI is an educational resource by Rag Innovations and does not provide clinical medical advice or diagnosis. Always consult a healthcare professional.
+#         </div>
+#         """,
+#         unsafe_allow_html=True,
+#     )
 
 # ----- Init RAG with diagnostics -----
 with st.spinner("Warming up the knowledge base…"):
@@ -505,24 +505,24 @@ if result is None or len(result) != 4:
 
 retriever, model, template, diagnostics = result
 
-# ----- Show diagnostics in sidebar (collapsible) -----
-with st.sidebar:
-    with st.expander("🔧 System Diagnostics", expanded=False):
-        st.caption(f"**Python:** `{diagnostics['python_version'].split()[0]}`")
-        st.caption(f"**API Key:** {'✅ Loaded' if diagnostics['api_key_loaded'] else '❌ Missing'} ({diagnostics.get('api_key_prefix', 'N/A')})")
-        st.caption(f"**ChromaDB:** {'✅ Loaded' if diagnostics['chroma_loaded'] else '❌ Failed'}")
-        st.caption(f"**Documents:** `{diagnostics['doc_count']}`")
-        st.caption(f"**Embedding Test:** {'✅ Passed' if diagnostics['embedding_test'] else '❌ Failed'}")
-        st.caption(f"**Retriever:** {'✅ Ready' if diagnostics['retriever_ready'] else '❌ Failed'}")
-        st.caption(f"**LLM:** {'✅ Ready' if diagnostics['llm_ready'] else '❌ Failed'}")
-        if diagnostics["errors"]:
-            st.error("**Errors:**")
-            for err in diagnostics["errors"]:
-                st.code(err, language="text")
+# ----- Show diagnostics in sidebar (collapsible) - Commented Out -----
+# with st.sidebar:
+#     with st.expander("🔧 System Diagnostics", expanded=False):
+#         st.caption(f"**Python:** `{diagnostics['python_version'].split()[0]}`")
+#         st.caption(f"**API Key:** {'✅ Loaded' if diagnostics['api_key_loaded'] else '❌ Missing'} ({diagnostics.get('api_key_prefix', 'N/A')})")
+#         st.caption(f"**ChromaDB:** {'✅ Loaded' if diagnostics['chroma_loaded'] else '❌ Failed'}")
+#         st.caption(f"**Documents:** `{diagnostics['doc_count']}`")
+#         st.caption(f"**Embedding Test:** {'✅ Passed' if diagnostics['embedding_test'] else '❌ Failed'}")
+#         st.caption(f"**Retriever:** {'✅ Ready' if diagnostics['retriever_ready'] else '❌ Failed'}")
+#         st.caption(f"**LLM:** {'✅ Ready' if diagnostics['llm_ready'] else '❌ Failed'}")
+#         if diagnostics["errors"]:
+#             st.error("**Errors:**")
+#             for err in diagnostics["errors"]:
+#                 st.code(err, language="text")
 
 # ----- Check if RAG is healthy -----
 if retriever is None or model is None or template is None:
-    st.error("❌ **RAG pipeline failed to initialize.** Check the diagnostics panel in the sidebar.")
+    st.error("❌ **RAG pipeline failed to initialize.**")
     if diagnostics["errors"]:
         for err in diagnostics["errors"]:
             st.error(err)
