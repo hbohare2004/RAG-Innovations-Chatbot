@@ -585,7 +585,7 @@ for idx, msg in enumerate(st.session_state.messages):
             st.markdown(content)
 
 # ----- Input -----
-user_input = st.chat_input("Ask about rag innovations, sanitary napkins, or period care…")
+user_input = st.chat_input("Ask about rag innovations, sanitary napkins..")
 prompt = user_input or pending_prompt
 
 if prompt:
