@@ -20,7 +20,7 @@ export default function Header({ healthStatus, onClearChat, messageCount }) {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-bold text-lg text-slate-900 tracking-tight">RagAI</span>
+              <span className="hidden sm:inline font-bold text-lg text-slate-900 tracking-tight">RagAI</span>
               <span className="hidden sm:inline-flex text-[10px] font-semibold uppercase tracking-wider bg-[#9c1c2b]/10 text-[#9c1c2b] px-2 py-0.5 rounded-full">
                 AI Assistant
               </span>

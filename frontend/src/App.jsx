@@ -22,7 +22,7 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [healthStatus, setHealthStatus] = useState(null);
   const [showScrollBottom, setShowScrollBottom] = useState(false);
-  
+
   const messagesEndRef = useRef(null);
   const chatContainerRef = useRef(null);
   const inputRef = useRef(null);
@@ -87,7 +87,7 @@ export default function App() {
 
     try {
       const response = await sendChatMessage(text);
-      
+
       const assistantMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
@@ -119,7 +119,7 @@ export default function App() {
 
   return (
     <div className="flex flex-col h-screen bg-[#faf7f2] text-slate-900 overflow-hidden font-sans">
-      
+
       {/* Top Header */}
       <Header
         healthStatus={healthStatus}
@@ -132,7 +132,7 @@ export default function App() {
         <div className="bg-amber-500/10 border-b border-amber-500/20 px-4 py-2 text-center text-xs text-amber-900 flex items-center justify-center gap-2">
           <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0" />
           <span>Backend service is offline or connecting. Start the FastAPI backend on port 8000.</span>
-          <button 
+          <button
             onClick={performHealthCheck}
             className="underline font-semibold hover:text-amber-950 inline-flex items-center gap-1 ml-1 cursor-pointer"
           >
@@ -160,19 +160,21 @@ export default function App() {
         )}
       </main>
 
-      {/* Scroll to Bottom Floating Button */}
-      {showScrollBottom && (
-        <button
-          onClick={() => scrollToBottom('smooth')}
-          className="fixed bottom-24 right-6 sm:right-12 z-30 p-2.5 rounded-full bg-white text-slate-700 shadow-lg border border-slate-200 hover:bg-slate-50 transition-all transform hover:scale-105 active:scale-95 animate-fade-in cursor-pointer"
-          title="Scroll to latest message"
-        >
-          <ArrowDown className="w-4 h-4 text-[#9c1c2b]" />
-        </button>
-      )}
-
       {/* Bottom Input Area */}
-      <footer className="w-full bg-gradient-to-t from-[#faf7f2] via-[#faf7f2]/95 to-transparent pt-2">
+      <footer className="w-full bg-gradient-to-t from-[#faf7f2] via-[#faf7f2]/95 to-transparent pt-2 relative">
+        {/* Scroll to Bottom Floating Pill centered above input bar */}
+        {showScrollBottom && (
+          <div className="absolute -top-9 left-1/2 -translate-x-1/2 z-30">
+            <button
+              onClick={() => scrollToBottom('smooth')}
+              className="w-8 h-8 rounded-full bg-white/70 hover:bg-white/95 backdrop-blur-sm text-[#9c1c2b] shadow-sm border border-[#e6cfa3]/70 flex items-center justify-center transition-all transform hover:scale-110 active:scale-95 animate-fade-in cursor-pointer"
+              title="Scroll to latest message"
+            >
+              <ArrowDown className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
         <ChatInput
           onSendMessage={handleSendMessage}
           isLoading={isLoading}
