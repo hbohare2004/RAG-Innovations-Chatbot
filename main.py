@@ -4,7 +4,9 @@ import sys
 # pyrefly: ignore [missing-import]
 from dotenv import load_dotenv
 # pyrefly: ignore [missing-import]
-from langchain_mistralai import ChatMistralAI, MistralAIEmbeddings
+from langchain_mistralai import MistralAIEmbeddings
+# pyrefly: ignore [missing-import]
+from langchain_groq import ChatGroq
 # pyrefly: ignore [missing-import]
 from langchain_community.vectorstores import Chroma
 # pyrefly: ignore [missing-import]
@@ -33,7 +35,10 @@ retriever = vectorstore.as_retriever(
 )
 
 # LLM
-model = ChatMistralAI(model = "mistral-small-2603")
+model = ChatGroq(
+    model="llama-3.3-70b-versatile",
+    groq_api_key=os.getenv("GROQ_API_KEY")
+)
 
 # Prompt template
 template = ChatPromptTemplate.from_messages(
