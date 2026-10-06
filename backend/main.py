@@ -2,15 +2,31 @@
 FastAPI application for Rag Innovations RAG Chatbot Backend.
 """
 
+import os
+import sys
 import logging
 from contextlib import asynccontextmanager
+
+# Ensure both repo root and backend directory are in sys.path
+_current_dir = os.path.dirname(os.path.abspath(__file__))
+_parent_dir = os.path.dirname(_current_dir)
+if _parent_dir not in sys.path:
+    sys.path.insert(0, _parent_dir)
+if _current_dir not in sys.path:
+    sys.path.insert(0, _current_dir)
+
 from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from backend.config import settings
-from backend.schemas import ChatRequest, ChatResponse, HealthResponse, SourceDocument
-from backend.rag import get_rag_service
+try:
+    from backend.config import settings
+    from backend.schemas import ChatRequest, ChatResponse, HealthResponse, SourceDocument
+    from backend.rag import get_rag_service
+except ImportError:
+    from config import settings
+    from schemas import ChatRequest, ChatResponse, HealthResponse, SourceDocument
+    from rag import get_rag_service
 
 logging.basicConfig(
     level=logging.INFO,

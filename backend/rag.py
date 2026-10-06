@@ -17,7 +17,10 @@ except ImportError:
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.documents import Document
 
-from backend.config import settings
+try:
+    from backend.config import settings
+except ImportError:
+    from config import settings
 
 logger = logging.getLogger(__name__)
 
