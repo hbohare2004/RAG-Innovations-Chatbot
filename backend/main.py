@@ -57,12 +57,15 @@ app = FastAPI(
 
 # Configure CORS
 origins = settings.CORS_ORIGINS
-# Ensure localhost and dev ports are always present in dev
+# Ensure production Vercel domains and local dev ports are always present
 default_dev_origins = [
+    "https://rag-innovations-chatbot-dbb7.vercel.app",
     "http://localhost:5173",
     "http://127.0.0.1:5173",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
 ]
 for origin in default_dev_origins:
     if origin not in origins:
@@ -89,6 +92,7 @@ async def root():
 
 
 @app.get("/api/health", response_model=HealthResponse, summary="Service health check")
+@app.get("/health", response_model=HealthResponse, summary="Service health check alias")
 async def health_check():
     """Returns the initialization status and diagnostic details of the RAG system."""
     service = get_rag_service()
@@ -111,6 +115,7 @@ async def health_check():
 
 
 @app.post("/api/chat", response_model=ChatResponse, summary="Ask a question to the RAG AI")
+@app.post("/chat", response_model=ChatResponse, summary="Ask a question alias")
 async def chat(request: ChatRequest):
     """Processes user query against knowledge base and returns AI generated answer with sources."""
     user_msg = request.message.strip()

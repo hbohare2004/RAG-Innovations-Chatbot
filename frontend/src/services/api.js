@@ -1,8 +1,9 @@
 /**
- * API Service for communicating with Rag Innovations FastAPI backend.
+ * API Service for communicating with Rag Innovations FastAPI backend (Railway / Localhost).
  */
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
+const rawBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const API_BASE = rawBase.replace(/\/+$/, '');
 
 /**
  * Send a user message to the RAG backend.
@@ -10,20 +11,29 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
  * @returns {Promise<{answer: string, sources: Array, status: string}>}
  */
 export async function sendChatMessage(message) {
-  const url = `${API_BASE}/api/chat`;
-  
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 45000); // 45s timeout for LLM
+  // Support both /chat and /api/chat endpoints
+  const primaryUrl = `${API_BASE}/chat`;
+  const fallbackUrl = `${API_BASE}/api/chat`;
 
-    const response = await fetch(url, {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 45000); // 45s timeout for LLM
+
+  try {
+    let response = await fetch(primaryUrl, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ message }),
       signal: controller.signal,
     });
+
+    if (response.status === 404) {
+      response = await fetch(fallbackUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message }),
+        signal: controller.signal,
+      });
+    }
 
     clearTimeout(timeoutId);
 
@@ -43,6 +53,7 @@ export async function sendChatMessage(message) {
       status: data.status || "success",
     };
   } catch (err) {
+    clearTimeout(timeoutId);
     if (err.name === 'AbortError') {
       throw new Error("Request timed out while generating a response. Please try again.");
     }
@@ -56,11 +67,14 @@ export async function sendChatMessage(message) {
  * @returns {Promise<{status: string, vectorstore_loaded: boolean, llm_loaded: boolean, model_name: string}>}
  */
 export async function checkBackendHealth() {
-  const url = `${API_BASE}/api/health`;
+  const primaryUrl = `${API_BASE}/health`;
+  const fallbackUrl = `${API_BASE}/api/health`;
+
   try {
-    const response = await fetch(url, {
-      headers: { 'Accept': 'application/json' },
-    });
+    let response = await fetch(primaryUrl, { headers: { 'Accept': 'application/json' } });
+    if (response.status === 404) {
+      response = await fetch(fallbackUrl, { headers: { 'Accept': 'application/json' } });
+    }
     if (!response.ok) {
       return { status: 'offline', vectorstore_loaded: false, llm_loaded: false };
     }
