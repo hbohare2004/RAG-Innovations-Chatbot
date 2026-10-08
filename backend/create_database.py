@@ -33,13 +33,28 @@ def build_vector_database(persist_directory: str = "RagInno_DB"):
     print(f"Loading web documents from {len(urls)} URLs...")
     loader = WebBaseLoader(web_paths=urls)
     docs = loader.load()
-    print(f"Total pages loaded: {len(docs)}")
 
     splitter = RecursiveCharacterTextSplitter(
-        chunk_size=1000,
-        chunk_overlap=150
+        chunk_size=800,
+        chunk_overlap=100
     )
     chunks = splitter.split_documents(docs)
+
+    for doc in chunks:
+        source = doc.metadata.get("source", "")
+
+        if "/products" in source:
+            doc.metadata["page_type"] = "products"
+        elif "/services" in source:
+            doc.metadata["page_type"] = "services"
+        elif "/pricing" in source:
+            doc.metadata["page_type"] = "pricing"
+        elif "/about" in source:
+            doc.metadata["page_type"] = "about"
+        else:
+            doc.metadata["page_type"] = "general"
+
+    print(f"Total pages loaded: {len(docs)}")
     print(f"Total chunks created: {len(chunks)}")
 
     embeddings = MistralAIEmbeddings(mistral_api_key=api_key)

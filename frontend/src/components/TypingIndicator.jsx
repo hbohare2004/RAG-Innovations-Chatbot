@@ -5,9 +5,9 @@ export default function TypingIndicator() {
     <div className="flex w-full py-3 px-2 sm:px-4 animate-fade-in justify-start">
       <div className="flex gap-3 max-w-3xl w-full">
         {/* Avatar */}
-        <div className="w-9 h-9 rounded-2xl bg-white border border-[#e6cfa3]/60 p-1 flex items-center justify-center shadow-xs flex-shrink-0">
+        {/* <div className="w-9 h-9 rounded-2xl bg-white border border-[#e6cfa3]/60 p-1 flex items-center justify-center shadow-xs flex-shrink-0">
           <img src="/logo.png" alt="Rag Innovations" className="w-7 h-7 object-contain" />
-        </div>
+        </div> */}
 
         <div className="flex flex-col items-start">
           <div className="flex items-center gap-2 mb-1 px-1">

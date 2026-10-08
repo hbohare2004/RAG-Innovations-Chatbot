@@ -25,9 +25,9 @@ export default function ChatMessage({ message }) {
   return (
     <div className={`flex w-full py-3 px-2 sm:px-4 animate-fade-in ${isUser ? 'justify-end' : 'justify-start'}`}>
       <div className={`flex gap-3 max-w-3xl w-full ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
-        
+
         {/* Avatar */}
-        <div className="flex-shrink-0">
+        {/* <div className="flex-shrink-0">
           {isUser ? (
             <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-[#9c1c2b] to-[#b42d3e] text-white flex items-center justify-center font-bold text-xs shadow-sm">
               You
@@ -37,11 +37,11 @@ export default function ChatMessage({ message }) {
               <img src="/logo.png" alt="Rag Innovations" className="w-7 h-7 object-contain" />
             </div>
           )}
-        </div>
+        </div> */}
 
         {/* Message Container */}
         <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} max-w-[88%] sm:max-w-[85%]`}>
-          
+
           {/* Header info (Name & Time) */}
           <div className="flex items-center gap-2 mb-1 px-1">
             <span className="text-xs font-semibold text-slate-700">
@@ -56,13 +56,12 @@ export default function ChatMessage({ message }) {
 
           {/* Bubble */}
           <div
-            className={`p-4 sm:p-5 rounded-2xl transition-all shadow-xs ${
-              isUser
+            className={`p-4 sm:p-5 rounded-2xl transition-all shadow-xs ${isUser
                 ? 'bg-gradient-to-r from-[#9c1c2b] to-[#b42d3e] text-white rounded-tr-none shadow-sm'
                 : message.isError
-                ? 'bg-rose-50 border border-rose-200 text-rose-900 rounded-tl-none'
-                : 'bg-white border border-slate-200/90 text-slate-800 rounded-tl-none shadow-xs'
-            }`}
+                  ? 'bg-rose-50 border border-rose-200 text-rose-900 rounded-tl-none'
+                  : 'bg-white border border-slate-200/90 text-slate-800 rounded-tl-none shadow-xs'
+              }`}
           >
             {isUser ? (
               <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
