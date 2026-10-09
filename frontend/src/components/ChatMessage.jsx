@@ -57,10 +57,10 @@ export default function ChatMessage({ message }) {
           {/* Bubble */}
           <div
             className={`p-4 sm:p-5 rounded-2xl transition-all shadow-xs ${isUser
-                ? 'bg-gradient-to-r from-[#9c1c2b] to-[#b42d3e] text-white rounded-tr-none shadow-sm'
-                : message.isError
-                  ? 'bg-rose-50 border border-rose-200 text-rose-900 rounded-tl-none'
-                  : 'bg-white border border-slate-200/90 text-slate-800 rounded-tl-none shadow-xs'
+              ? 'bg-gradient-to-r from-[#9c1c2b] to-[#b42d3e] text-white rounded-tr-none shadow-sm'
+              : message.isError
+                ? 'bg-rose-50 border border-rose-200 text-rose-900 rounded-tl-none'
+                : 'bg-white border border-slate-200/90 text-slate-800 rounded-tl-none shadow-xs'
               }`}
           >
             {isUser ? (
@@ -83,10 +83,10 @@ export default function ChatMessage({ message }) {
                 title="Copy answer to clipboard"
               >
                 {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                <span>{copied ? 'Copied!' : 'Copy'}</span>
+                {/* <span>{copied ? 'Copied!' : 'Copy'}</span> */}
               </button>
 
-              {hasSources && (
+              {/* {hasSources && (
                 <button
                   onClick={() => setShowSources(true)}
                   className="inline-flex items-center gap-1 text-[11px] font-medium text-[#9c1c2b] hover:text-[#b42d3e] px-2 py-1 rounded-md bg-[#9c1c2b]/5 hover:bg-[#9c1c2b]/10 transition-colors border border-[#9c1c2b]/20 cursor-pointer"
@@ -94,7 +94,7 @@ export default function ChatMessage({ message }) {
                   <BookOpen className="w-3.5 h-3.5" />
                   <span>{sources.length} Verified Source{sources.length > 1 ? 's' : ''}</span>
                 </button>
-              )}
+              )} */}
             </div>
           )}
 
@@ -113,3 +113,5 @@ export default function ChatMessage({ message }) {
     </div>
   );
 }
+
+
